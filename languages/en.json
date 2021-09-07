@@ -1,0 +1,7 @@
+{
+  "GENERIC-COUNTER": {
+	"button-title": "Open SFRPG Counter list",
+	"add-counter": "Add Counter",
+    "delete-counter": "Delete Counter"
+  }
+}

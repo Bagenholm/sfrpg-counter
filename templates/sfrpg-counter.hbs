@@ -1,0 +1,24 @@
+{{log 'counter-list-template' this}}
+
+<form>
+  <ul class="counter-list flexcol">
+    {{#each counters}}
+    <li class="flexrow" data-counter-id="{{id}}">
+      <div class="item-image">
+        <img src={{itemImg}} style="height: 35px; max-width:100%;" title="{{itemName}}">
+      </div>
+      <input type="text" value="{{label}}" name="{{id}}.label" data-dtype="String"/>
+
+      <button type="button" class="counter-list-changevalue-button flex1" data-action="reduce"><i class="fas fa-minus"></i></button>
+      <p>{{value}} / {{max}}</p>
+      <button type="button" class="counter-list-changevalue-button flex0" data-action="increase"><i class="fas fa-plus"></i></button>
+      <button type="button" class="counter-list-changevalue-button flex0" data-action="edit"><i class="fas fa-edit"></i></button>
+      <button type="button" class="counter-list-changevalue-button flex0" title="{{localize "SFRPG-COUNTER.delete-counter"}}" data-action="delete">
+        <i class="fas fa-trash"></i>
+      </button>
+    </li>
+    {{/each}}
+  </ul>
+
+  <button type="button" {{localize "COUNTER-LIST.add-counter"}} data-action="create"><i class="fas fa-plus"></i> Add Counter</button>
+</form>
