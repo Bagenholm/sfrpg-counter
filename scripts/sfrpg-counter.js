@@ -9,14 +9,12 @@ Hooks.once('devModeReady', ({ registerPackageDebugFlag }) => {
 Hooks.on('renderPlayerList', (playerList, html) => {
     const loggedInUserListItem = html.find(`[data-user-id="${game.userId}"]`)
     
-    const tooltip = game.i18n.localize('COUNTER-LIST.button-title');
-    
     loggedInUserListItem.append(
-    `<button type='button' class='counter-list-icon-button flex0' title='${tooltip}'><i class='fas fa-tasks'></i></button>`
+    `<button type='button' class='counter-list-icon-button flex0' title='SFRPG Counters'><i class='fas fa-wave-square'></i></button>`
     );
     
     html.on('click', '.counter-list-icon-button', (event) => {
-    const userId = $(event.currentTarget).parents('[data-user-id]')?.data()?.userId;
+    const userId = getUserIdFromClick(event);
     SfrpgCounter.initialize();
     SfrpgCounter.sfrpgCounterConfig.render(true, {userId});
     });
@@ -29,6 +27,10 @@ Hooks.on('onBeforeUpdateCombat', (combatEventData) => {
 Hooks.on('onActorRest', (restEvent) => {
     SfrpgCounterAutoUpdater.updateRestCounters(restEvent);
 }); 
+
+function getUserIdFromClick(event) {
+    return $(event.currentTarget).parents('[data-user-id]')?.data()?.userId;
+}
 
 class SfrpgCounter {
     static ID = 'sfrpg-counter';
@@ -113,18 +115,6 @@ class SfrpgCounterData {
         SfrpgCounter.sfrpgCounterEdit.render(false, currentCounter);
         return;
     }
-
-    /*static updateEditCounter(counterId, actorId, updateData) {
-        SfrpgCounter.log(false, 'Update edit counter', updateData);
-
-        updateData.counterId = counterId;
-
-        const update = {
-            [counterId]: updateData
-        }
-
-        return game.actors.get(actorId)?.setFlag(SfrpgCounter.ID, SfrpgCounter.FLAGS.COUNTERS, update);
-    } */
 
     static deleteCounter(actorId, counterId) {
         const currentCounter = this.allCounters()[counterId];
@@ -268,8 +258,8 @@ class SfrpgCounterConfig extends FormApplication {
           max: 3,
           value: 1,
           itemImg: SfrpgCounter.DEFAULT_ITEM_IMG,
-          closeOnSubmit: false, // do not close when submitted
-          submitOnChange: true // submit when any input changes
+          closeOnSubmit: false, 
+          submitOnChange: true 
         };
 
         const mergedOptions = foundry.utils.mergeObject(defaults, overrides);
@@ -278,12 +268,17 @@ class SfrpgCounterConfig extends FormApplication {
     }
 
     static identifyActor() {
-        if(canvas.tokens?.controlled[0]?.actor?.id != null) {
-            return canvas.tokens.controlled[0].actor.id;
-        } /* else if(game.user.character.data._id != null) {
-            return game.user.character.data._id; 
-        } */
-        ui.notifications.warn('No actor chosen.')
+        if(canvas.tokens.ownedTokens.length == 1) {
+            return canvas.tokens.ownedTokens[0].actor.data._id;
+        } else if(canvas.tokens.ownedTokens.length > 1) {
+            if(canvas.tokens?.controlled[0]?.actor?.id != null) {
+                return canvas.tokens.controlled[0].actor.id;
+            } else {
+                ui.notifications.warn('You own more than one token on the canvas. Please select a token first.');
+            }
+        } else {
+            ui.notifications.warn('You need to own a token on the canvas to use counters.');
+        }
     }
 
     getData(options) {
@@ -387,7 +382,7 @@ class SfrpgCounterEdit extends FormApplication {
 
     getData(options) {
         return options;
-    }
+    } 
 
     async _updateObject(event, formData) {
     
@@ -395,6 +390,7 @@ class SfrpgCounterEdit extends FormApplication {
 
         const mergedOptions = foundry.utils.mergeObject(this.options, formData);
         this.options = mergedOptions;
+        SfrpgCounter.sfrpgCounterConfig.options;
     }
 
     async _onDrop(event) {
