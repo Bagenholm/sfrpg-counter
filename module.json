@@ -2,12 +2,11 @@
   "name": "sfrpg-counter",
   "title": "SFRPG Counter",
   "description": "Allows you to track things.",
-  "authors": [
-    {
-      "name": "Sputt"
-    }
-  ],
-   "scripts": [
+  "author":"Sputt",
+  "url": "https://github.com/Bagenholm/sfrpg-counter",
+  "manifest": "https://github.com/Bagenholm/sfrpg-counter/tree/development/module.json",
+  "download": "https://github.com/Bagenholm/sfrpg-counter/tree/development/archive/sfrpg-counter-develop.zip",
+    "scripts": [
     "scripts/sfrpg-counter.js"
   ],
     "languages": [
@@ -20,6 +19,6 @@
     "styles": [
     "styles/sfrpg-counter.css"
   ],
-  "version": "1",
+  "version": "0.1",
   "minimumCoreVersion": "0.8.8"
 }
