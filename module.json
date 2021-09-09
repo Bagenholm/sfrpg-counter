@@ -1,11 +1,12 @@
 {
   "name": "sfrpg-counter",
   "title": "SFRPG Counter",
-  "description": "Allows you to track things.",
+  "description": "Allows you to track SFRPG things.",
   "author":"Sputt",
+  "systems": ["sfrpg"],
   "url": "https://github.com/Bagenholm/sfrpg-counter",
-  "manifest": "https://github.com/Bagenholm/sfrpg-counter/tree/development/module.json",
-  "download": "https://github.com/Bagenholm/sfrpg-counter/tree/development/archive/sfrpg-counter-develop.zip",
+  "manifest": "https://raw.githubusercontent.com/Bagenholm/sfrpg-counter/development/module.json",
+  "download": "https://github.com/Bagenholm/sfrpg-counter/blob/development/archive/sfrpg-counter-develop.zip?raw=true",
     "scripts": [
     "scripts/sfrpg-counter.js"
   ],
@@ -19,6 +20,6 @@
     "styles": [
     "styles/sfrpg-counter.css"
   ],
-  "version": "0.1",
+  "version": "0.1.0",
   "minimumCoreVersion": "0.8.8"
 }
