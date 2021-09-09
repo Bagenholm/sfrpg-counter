@@ -2,7 +2,7 @@
   "name": "sfrpg-counter",
   "title": "SFRPG Counter",
   "description": "Allows you to track SFRPG things.",
-  "author":"Sputt",
+  "author": "Sputt",
   "systems": ["sfrpg"],
   "url": "https://github.com/Bagenholm/sfrpg-counter",
   "manifest": "https://raw.githubusercontent.com/Bagenholm/sfrpg-counter/development/module.json",
@@ -21,5 +21,6 @@
     "styles/sfrpg-counter.css"
   ],
   "version": "0.1.0",
-  "minimumCoreVersion": "0.8.8"
+  "minimumCoreVersion": "0.8.8",
+  "compatibleCoreVersion": "0.8.9"
 }
