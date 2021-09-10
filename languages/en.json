@@ -1,7 +1,23 @@
 {
-  "GENERIC-COUNTER": {
+  "SFRPG-COUNTER": {
 	"button-title": "Open SFRPG Counter list",
-	"add-counter": "Add Counter",
-    "delete-counter": "Delete Counter"
+	"add-counter": "Add a new counter",
+    "delete-counter": "Delete counter",
+	"value-max": "Counter's value / max",
+	"reduce-counter": "Reduce counter value by 1",
+	"increase-counter": "Increase counter value by 1",
+	"edit-counter": "Edit counter",
+	"label": "The name shown for the counter",
+	"min": "Counter's minimum value",
+	"max": "Counter's maximum value",
+	"value": "Counter's current value",
+	"auto-update": "Check to automatically update the counter's value on specific trigger",
+	"feat-control": "Check to automatically activate and deactivate the chosen feat",
+	"auto-update-on": "The trigger that changes the counter's value",
+	"auto-update-by": "How to change the counter's value on the chosen trigger",
+	"feat-control-on": "Automatically activate feat when counter's value reaches this number",
+	"feat-control-off": "Automatically deactivate feat when counter's value reaches this number",
+	"stf": "Visit southerntomfoolery.com for an amazing Starfinder podcast"
   }
 }
+

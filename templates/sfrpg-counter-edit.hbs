@@ -2,29 +2,29 @@
 
 <form>
     <div class="flexcol">
-    <div>
+    <div title="{{localize "SFRPG-COUNTER.label"}}">
         <label for="label">Name: </label>
-        <input type="text" value="{{label}}" name="label" data-dtype="String" />
+        <input type="text" value="{{label}}" name="label" data-dtype="String"/>
     </div>
-    <div>
+    <div title="{{localize "SFRPG-COUNTER.min"}}">
         <label for="min">Min: </label>
-        <input type="text" value="{{min}}" name="min" data-dtype="String" />
+        <input type="text" value="{{min}}" name="min" data-dtype="String"/>
     </div>
-    <div>
+    <div title="{{localize "SFRPG-COUNTER.max"}}">
         <label for="max">Max: </label>
-        <input type="text" value="{{max}}" name="max" />
+        <input type="text" value="{{max}}" name="max"/>
     </div>
-    <div>
+    <div title="{{localize "SFRPG-COUNTER.value"}}">
         <label for="value">Value: </label>
-        <input type="text" value="{{value}}" name="value" />
+        <input type="text" value="{{value}}" name="value"/>
     </div>
-    <div>
-        <label for="isAuto">Auto update: </label>
-        <input type="checkbox" name="isAuto" data-dtype="Boolean" {{checked isAuto}} />
+    <div title="{{localize "SFRPG-COUNTER.auto-update"}}">
+        <label for="isAuto">Auto-update counter value: </label>
+        <input type="checkbox" name="isAuto" data-dtype="Boolean" {{checked isAuto}}/>
     </div>
     {{#if isAuto}}
-    <div>
-        <label for="autoOn"> on... </label>
+    <div title="{{localize "SFRPG-COUNTER.auto-update-on"}}">
+        <label for="autoOn" > on... </label>
         <select name="autoOn">
             {{#select autoOn}}
             <option value="longRest">Long rest</option>
@@ -34,7 +34,7 @@
             {{/select}}
         </select>
     </div>
-    <div>
+    <div title="{{localize "SFRPG-COUNTER.auto-update-by"}}">
         <label for="autoValue">by..</label>
         <select name="autoValue">
             {{#select autoValue}}
@@ -46,8 +46,8 @@
         </select>
     </div>
     {{/if}}
-    <div>
-        <label for="isItemAuto">Auto-update feat</label>
+    <div title="{{localize "SFRPG-COUNTER.feat-control"}}">
+        <label for="isItemAuto">Control Feat Activation: </label>
         <input type="checkbox" name="isItemAuto" data-dtype="Boolean" {{checked isItemAuto}} />
     </div>
     <div class="flexrow">
@@ -55,14 +55,13 @@
             <img src={{itemImg}} style="height: 35px; max-width:100%;">
         </div>
         <div name="itemName">{{itemName}}</div>
-        <!-- <input type="text" name="itemId" value="{{itemId}}"></div> -->
     </div>
     {{#if isItemAuto}}
-    <div>
+    <div title="{{localize "SFRPG-COUNTER.feat-control-on"}}">
         <label for="itemActivateAt">activate feat on..</label>
         <input type="text" value="{{itemActivateAt}}" name="itemActivateAt" />
     </div>
-    <div>
+    <div title="{{localize "SFRPG-COUNTER.feat-control-off"}}">
         <label for="itemDeactivateAt">deactivate feat on..</label>
         <input type="text" value="{{itemDeactivateAt}}" name="itemDeactivateAt" />
     </div>

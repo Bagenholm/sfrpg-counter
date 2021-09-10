@@ -9,10 +9,12 @@ Hooks.once('devModeReady', ({ registerPackageDebugFlag }) => {
 Hooks.on('renderPlayerList', (playerList, html) => {
     const loggedInUserListItem = html.find(`[data-user-id="${game.userId}"]`)
     
+    const tooltip = game.i18n.localize('SFRPG-COUNTER.button-title');
+
     loggedInUserListItem.append(
-    `<button type='button' class='counter-list-icon-button flex0' title='SFRPG Counters'><i class='fas fa-wave-square'></i></button>`
+    `<button type='button' class='counter-list-icon-button flex0' title='${tooltip}'><i class='fas fa-wave-square'></i></button>`
     );
-    
+
     html.on('click', '.counter-list-icon-button', (event) => {
     const userId = getUserIdFromClick(event);
     SfrpgCounter.initialize();
@@ -299,7 +301,7 @@ class SfrpgCounterConfig extends FormApplication {
 
         switch (action) {
             case 'create': {
-                await SfrpgCounterData.createCounter(this.options.actorId, {min: 0, max: 3, value: 1, itemImg: "icons/svg/mystery-man.svg"});
+                await SfrpgCounterData.createCounter(this.options.actorId, {label: 'New counter', min: 0, max: 3, value: 1, itemImg: "icons/svg/mystery-man.svg"});
                 this.render();
                 break;
             }
@@ -399,19 +401,28 @@ class SfrpgCounterEdit extends FormApplication {
 
         if(parsedDragData.type == "Item") {
             const counter = SfrpgCounterData.getCounter(this.options.id);
-
-            counter.itemId = parsedDragData.data._id;
-            let itemName = game.actors?.get(counter.actorId)?.items?.get(counter.itemId)?.data?.name;
-            counter.itemName = itemName;
-            counter.itemImg = game.actors?.get(counter.actorId)?.items?.get(counter.itemId)?.data?.img;
+            const itemId = parsedDragData.data._id;
+            this.addFeatInfoToCounter(this.options, counter, itemId);
             
-            const mergedOptions = foundry.utils.mergeObject(this.options, counter);
-            this.options = mergedOptions;
             await SfrpgCounterData.updateCounter(counter.id, counter);
+            const mergedOptions = foundry.utils.mergeObject(this.options, counter);    
+            this.options = mergedOptions;
+            
             SfrpgCounter.log(false, 'After counter update on drop', counter, parsedDragData, this);
 
             this.render();
         }  
+    }
+
+    addFeatInfoToCounter(options, counter, itemId) {
+        counter.itemId = itemId;
+        const item = game.actors?.get(counter.actorId)?.items?.get(counter.itemId);
+        let itemName = item?.data?.name;
+        counter.itemName = itemName;
+        counter.itemImg = game.actors?.get(counter.actorId)?.items?.get(counter.itemId)?.data?.img;
+        counter.label = itemName;
+        //counter.
+        
     }
 
     activateListeners(html) {
