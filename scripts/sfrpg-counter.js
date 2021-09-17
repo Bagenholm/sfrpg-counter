@@ -227,6 +227,7 @@ class SfrpgCounterAutoUpdater {
 
     static updateFeatActivation(counter) {
         if(counter.isItemAuto) {
+            SfrpgCounter.log(false, 'Auomated feat control', counter)
             const counterActor = game.actors?.get(counter.actorId);
             const feat = counterActor.data.items?.get(counter.itemId);
             let updateData;
@@ -234,9 +235,17 @@ class SfrpgCounterAutoUpdater {
             if(counter.value == counter.itemActivateAt) {
                 updateData = true;
                 SfrpgCounter.log(false, 'Activating feat', feat)
+                if(counter.itemImg.includes('/conditions/')) {
+                    counterActor.setCondition(counter.itemName.toLowerCase(), updateData)
+                    return; 
+                }
             } else if(counter.value == counter.itemDeactivateAt) {
                 updateData = false;
                 SfrpgCounter.log(false, 'Deactivating feat', feat)
+                if(counter.itemImg.includes('/conditions/')) {
+                    counterActor.setCondition(counter.itemName.toLowerCase(), updateData)
+                    return; 
+                }
             }
 
             return feat?.setActive(updateData);
