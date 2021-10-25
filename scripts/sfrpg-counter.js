@@ -6,21 +6,8 @@ Hooks.once('devModeReady', ({ registerPackageDebugFlag }) => {
     registerPackageDebugFlag(SfrpgCounter.ID);
 });
 
-Hooks.on('renderPlayerList', (playerList, html) => {
-    const loggedInUserListItem = html.find(`[data-user-id="${game.userId}"]`)
-    
-    const tooltip = game.i18n.localize('SFRPG-COUNTER.button-title');
+Hooks.on("renderTokenHUD", (...args) => SfrpgCounter.tokenIcon(...args));
 
-    loggedInUserListItem.append(
-    `<button type='button' class='counter-list-icon-button flex0' title='${tooltip}'><i class='fas fa-wave-square'></i></button>`
-    );
-
-    html.on('click', '.counter-list-icon-button', (event) => {
-    const userId = getUserIdFromClick(event);
-    SfrpgCounter.initialize();
-    SfrpgCounter.sfrpgCounterConfig.render(true, {userId});
-    });
-});
 
 Hooks.on('onBeforeUpdateCombat', (combatEventData) => {
     SfrpgCounterAutoUpdater.updateCombatCounters(combatEventData);
@@ -29,10 +16,6 @@ Hooks.on('onBeforeUpdateCombat', (combatEventData) => {
 Hooks.on('onActorRest', (restEvent) => {
     SfrpgCounterAutoUpdater.updateRestCounters(restEvent);
 }); 
-
-function getUserIdFromClick(event) {
-    return $(event.currentTarget).parents('[data-user-id]')?.data()?.userId;
-}
 
 class SfrpgCounter {
     static ID = 'sfrpg-counter';
@@ -66,6 +49,29 @@ class SfrpgCounter {
         this.sfrpgCounterEdit.render();
     }
 
+    static tokenIcon(hud, html, token) {
+        let counterButton = this.createButton();
+        SfrpgCounter.log(false, 'Token Icon Click', token);
+        const userId = token.actorId;
+        
+        $(counterButton).click((event) => {
+            SfrpgCounter.initialize();
+            SfrpgCounter.sfrpgCounterConfig.render(true, {userId})});
+ 
+        let tokenItems = html.find('div.right');
+        tokenItems.append(counterButton);
+    }
+
+    static createButton() {
+        let button = document.createElement("div");
+
+		button.classList.add("control-icon");
+        button.classList.add("counter-list-icon-button");
+        button.title = game.i18n.localize('SFRPG-COUNTER.button-title');
+        button.innerHTML = `<i class="fas fa-image fa-wave-square"></i>`;
+
+        return button;
+    }
 }
 
 class SfrpgCounterData {
@@ -112,10 +118,11 @@ class SfrpgCounterData {
             [counterId]: updateData
         }
 
-        game.actors.get(currentCounter.actorId)?.setFlag(SfrpgCounter.ID, SfrpgCounter.FLAGS.COUNTERS, update);
-        SfrpgCounter.sfrpgCounterConfig.render();
-        SfrpgCounter.sfrpgCounterEdit.render(false, currentCounter);
-        return;
+        if(currentCounter.isActorResource) {
+            game.actors.get(currentCounter.actorId)?.setResourceBaseValue(currentCounter.type, currentCounter.subType, currentCounter.value);
+        }
+
+        return game.actors.get(currentCounter.actorId)?.setFlag(SfrpgCounter.ID, SfrpgCounter.FLAGS.COUNTERS, update);
     }
 
     static deleteCounter(actorId, counterId) {
@@ -270,7 +277,7 @@ class SfrpgCounterConfig extends FormApplication {
           value: 1,
           itemImg: SfrpgCounter.DEFAULT_ITEM_IMG,
           closeOnSubmit: false, 
-          submitOnChange: true 
+          submitOnChange: true,
         };
 
         const mergedOptions = foundry.utils.mergeObject(defaults, overrides);
@@ -284,12 +291,8 @@ class SfrpgCounterConfig extends FormApplication {
         } else if(canvas.tokens.ownedTokens.length > 1) {
             if(canvas.tokens?.controlled[0]?.actor?.id != null) {
                 return canvas.tokens.controlled[0].actor.id;
-            } else {
-                ui.notifications.warn('You own more than one token on the canvas. Please select a token first.');
             }
-        } else {
-            ui.notifications.warn('You need to own a token on the canvas to use counters.');
-        }
+        } 
     }
 
     getData(options) {
@@ -339,9 +342,10 @@ class SfrpgCounterConfig extends FormApplication {
 
             case 'edit': {
                 const userId = $(event.currentTarget).parents('[data-user-id]')?.data()?.userId;
-                const counter = SfrpgCounterData.getCounter(counterId);
-                SfrpgCounter.log(false, 'Edit counter', counterId, counter);
-                SfrpgCounter.sfrpgCounterEdit.render(true, counter);
+                //const counter = SfrpgCounterData.getCounter(counterId);
+                
+                //new SfrpgCounterEdit(counter).render(true, {counterId})
+                SfrpgCounter.sfrpgCounterEdit.render(true, {counterId});
                 break;
             }
 
@@ -361,7 +365,7 @@ class SfrpgCounterEdit extends FormApplication {
         const overrides = {
             height: 'auto',
             width: 'auto',
-            id: 'sfrpg-counter',
+     //       id: 'sfrpg-counter-edit',
             template: SfrpgCounter.TEMPLATES.EDITCOUNTER,
             title: 'Edit counter',
             userId: game.userId,
@@ -383,7 +387,10 @@ class SfrpgCounterEdit extends FormApplication {
             itemActivateAt: 3,
             itemDeactivateAt: 0,
             isItemAuto: false,
-            dragDrop: [{ dropSelector: null, dragSelector: null }]
+            dragDrop: [{ dropSelector: null, dragSelector: null }],
+            type: null,
+            subType: null,
+            isActorResource: false
         };
 
         const mergedOptions = foundry.utils.mergeObject(defaults, overrides);
@@ -392,24 +399,27 @@ class SfrpgCounterEdit extends FormApplication {
     }
 
     getData(options) {
-        return options;
+        return SfrpgCounterData.getCounter(options.counterId);
     } 
 
     async _updateObject(event, formData) {
     
-        await SfrpgCounterData.updateCounter(this.options.id, formData);
-
-        const mergedOptions = foundry.utils.mergeObject(this.options, formData);
-        this.options = mergedOptions;
-        SfrpgCounter.sfrpgCounterConfig.options;
+        await SfrpgCounterData.updateCounter(this.options.counterId, formData);
+        //this.render();
+        SfrpgCounter.renderWindows();
+        //const mergedOptions = foundry.utils.mergeObject(this.options, formData);
+        //this.options = mergedOptions; 
+        //this.render();
     }
 
     async _onDrop(event) {
         const dragData = event.dataTransfer.getData('text/plain');
         const parsedDragData = JSON.parse(dragData);
 
+        const counter = SfrpgCounterData.getCounter(this.options.counterId);
+        SfrpgCounter.log(false, 'Feature drop data', counter, parsedDragData, this);
+
         if(parsedDragData.type == "Item") {
-            const counter = SfrpgCounterData.getCounter(this.options.id);
             const itemId = parsedDragData.data._id;
             this.addFeatInfoToCounter(this.options, counter, itemId);
             
@@ -419,7 +429,7 @@ class SfrpgCounterEdit extends FormApplication {
             
             SfrpgCounter.log(false, 'After counter update on drop', counter, parsedDragData, this);
 
-            this.render();
+            SfrpgCounter.renderWindows();
         }  
     }
 
@@ -430,8 +440,14 @@ class SfrpgCounterEdit extends FormApplication {
         counter.itemName = itemName;
         counter.itemImg = game.actors?.get(counter.actorId)?.items?.get(counter.itemId)?.data?.img;
         counter.label = itemName;
-        //counter.
-        
+        if(item.data.type == "actorResource") {
+            counter.min = item.data.data.range.min;
+            counter.max = item.data.data.range.max;
+            counter.value = item.data.data.base;
+            counter.type = item.data.data.type;
+            counter.subType = item.data.data.subType;
+            counter.isActorResource = true;
+        }
     }
 
     activateListeners(html) {
