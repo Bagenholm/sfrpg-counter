@@ -169,13 +169,12 @@ class SfrpgCounterData {
         //if(mergedCounter.isSync) { TODO: change back to check whether it's synced
         if(true) {
            await this.syncActorFeatAndResource(mergedCounter, actor, counterId, updateData);
-        }
-       
+        }       
+
         //Renders here to make sure windows are rendered on autoUpdate
         SfrpgCounter.renderWindows();
         
         return;
-        //return actor.setFlag(SfrpgCounter.ID, SfrpgCounter.FLAGS.COUNTERS, update);
     }
 
     static async syncActorFeatAndResource(mergedCounter, actor, counterId, updateData) {
@@ -188,9 +187,14 @@ class SfrpgCounterData {
                 return await game.actors.get(mergedCounter.actorId)?.setResourceBaseValue(mergedCounter.type, mergedCounter.subType, mergedCounter.value);
             }
         } else if(mergedCounter.hasCharges) {
-            SfrpgCounter.log(false, 'Counter with charges')
+            SfrpgCounter.log(false, 'Counter with charges', actor, mergedCounter)
 
-            let featWithCharges = game.actors.get(mergedCounter.actorId).items.get(mergedCounter.itemId);
+            let featWithCharges; 
+            if(entityType == "Actor") {
+                featWithCharges = game.actors.get(mergedCounter.actorId).items.get(mergedCounter.itemId);
+            } else if(entityType == "Token") {
+                featWithCharges = actor.actor.items.get(mergedCounter.itemId)
+            }
             let restType;
 
             if(mergedCounter.autoOn == "longRest") {
@@ -259,6 +263,13 @@ class SfrpgCounterData {
         updatedCounter.value = relevantCounter.min;
         this.updateCounter(relevantCounter.id, updatedCounter, relevantCounter);
     }
+
+    static setTo0(counterId) {
+        var relevantCounter = this.allCounters()[counterId];
+        let updatedCounter = relevantCounter;
+        updatedCounter.value = 0;
+        this.updateCounter(relevantCounter.id, updatedCounter, relevantCounter);
+    }
 }
 
 class SfrpgCounterAutoUpdater {
@@ -311,6 +322,9 @@ class SfrpgCounterAutoUpdater {
             case 'toMax': {
                 SfrpgCounterData.setToMax(counter.id);
                 break;
+            }
+            case 'to0': {
+                SfrpgCounterData.setTo0(counter.id);
             }
             default: {
                 SfrpgCounter.log(false, 'Bad input in autoValue', counter)
@@ -487,10 +501,11 @@ class SfrpgCounterConfig extends FormApplication {
         const action = clickedElement.data().action;
         const counterId = clickedElement.parents('[data-counter-id]')?.data()?.counterId;
 
+        SfrpgCounter.log(true, "Button click", event)
         switch (action) {
             case 'create': {
                 await SfrpgCounterData.createCounter(this.options.actorId, {label: 'New counter', min: 0, max: 3, value: 1, itemImg: "icons/svg/mystery-man.svg"});
-                this.render();
+                this.render({"height": "auto", "width": "auto"});
                 break;
             }
 
@@ -499,7 +514,7 @@ class SfrpgCounterConfig extends FormApplication {
                 
                 if(confirmed) {
                     await SfrpgCounterData.deleteCounter(this.options.actorId, counterId);
-                    this.render();
+                    this.render({"height": "auto", "width": "auto"});
                 }
                 break;
             }
@@ -522,9 +537,56 @@ class SfrpgCounterConfig extends FormApplication {
                 break;
             }
 
+            case 'context': {
+                let options = SfrpgCounterConfig.getContextMenuOptions(counterId);
+                let menu = new ContextMenu($(event.currentTarget.parentElement), ".counter-list-values-button", options);
+                
+                //The context menu will clip under the edge of the FormApplication if this isn't set. 
+                //I know, it's disgusting. Great-great-great-great-great-grandparent...
+                //That's a one-shot waiting to happen. 
+                //"Your great great great great great grandparent decides your style! You *MUST* wear the weird pants with too short legs!""
+                
+                let applicationWindow = $(event.currentTarget.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement);
+                applicationWindow.css("overflowX", "visible");
+                applicationWindow.css("overflowY", "visible");
+
+                menu.render($(event.currentTarget.parentElement));
+                break;
+            }
+
             default: 
             SfrpgCounter.log(false, 'Invalid action detected', action);
         }
+    }
+
+    static getContextMenuOptions(counterId) {
+        let options = [];
+        options.push(
+            {
+                name: "Set to max",
+                icon: "<i class='fas fa-angle-double-up'></i>",
+                //condition: true,
+                callback: li => SfrpgCounterData.setToMax(counterId)
+            },
+            {
+                name: "Set to 0",
+                icon: "<i class='fas fa-circle'></i>",
+               // condition: true,
+                callback: li => SfrpgCounterData.setTo0(counterId)
+            },
+            {
+                name: "Set to min",
+                icon: "<i class='fas fa-angle-double-down'></i>",
+               // condition: true,
+                callback: li => SfrpgCounterData.setToMin(counterId)
+            },
+            {
+                name: "Close",
+                icon: "<i class='fas fa-times'></i>",
+                callback: li => {}
+            }
+        );
+        return options;
     }
 
 

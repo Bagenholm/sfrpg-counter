@@ -16,8 +16,8 @@
           </div>  
         </div>
 
-        <div class="flexrow flex4" style="flex-wrap: nowrap; justify-content: flex-end;"> 
-          <div style="white-space: nowrap; margin: 0.5em" class="flex0"  title="{{localize "SFRPG-COUNTER.value-max"}}">
+        <div class="flexrow flex4" id="counter-wrapper" style="flex-wrap: nowrap; justify-content: flex-end;"> 
+          <div style="white-space: nowrap; margin: 0.5em" id="counter-list-values-button" class="flex0" data-action="context" title="{{localize "SFRPG-COUNTER.value-max"}}">
             {{value}} / {{max}}
           </div>
           <button type="button" class="counter-list-changevalue-button flex0" data-action="reduce" title="{{localize "SFRPG-COUNTER.reduce-counter"}}"><i class="fas fa-minus"></i></button>

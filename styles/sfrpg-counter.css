@@ -30,7 +30,7 @@
     margin-right: 0;
   }
   
-  .sfrpg-counter-icon-button:hover, .todo-list-icon-button:focus {
+  .sfrpg-counter-icon-button:hover, #counter-list-values-button:hover {
     box-shadow: none;
     text-shadow: 0 0 5px red;
   }
