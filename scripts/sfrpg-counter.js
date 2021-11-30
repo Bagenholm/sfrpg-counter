@@ -334,18 +334,26 @@ class SfrpgCounterAutoUpdater {
 
     static updateRestCounters(restEvent) {
         var restType = restEvent.restType;
-        const actorCounters = Object.values(SfrpgCounterData.getCountersForActor(restEvent.actor?.data?._id));
-        var restCounters;
-        if(restType == 'short') {
-            restCounters = actorCounters.filter(counter => counter.autoOn == "shortRest");
-        } else if(restType == 'long') {
-            restCounters = actorCounters.filter(counter => counter.autoOn == "longRest");
-        } 
+        SfrpgCounter.log(false, "Resting", restEvent)
+        let actorCounters;
+        if(restEvent.actor.isToken) {
+            actorCounters = Object.values(SfrpgCounterData.getCountersForActor(restEvent.actor.parent?.id))
+        } else if(!restEvent.actor.isToken) {
+            actorCounters = Object.values(SfrpgCounterData.getCountersForActor(restEvent.actor?.data?._id));
+        }
 
-        SfrpgCounter.log(false, 'Update rest Counters', restCounters)
+        if(actorCounters.length > 0) {
+            var restCounters;
+            if(restType == 'short') {
+                restCounters = actorCounters.filter(counter => counter.autoOn == "shortRest");
+            } else if(restType == 'long') {
+                restCounters = actorCounters.filter(counter => counter.autoOn == "longRest");
+            } 
+    
+            this.updateTurnCounters(restCounters);
+        }
 
-        this.updateTurnCounters(restCounters);
-
+        return;
     }
 
     static getActorIdFromItem(item) {
@@ -457,6 +465,7 @@ class SfrpgCounterConfig extends FormApplication {
           itemImg: SfrpgCounter.DEFAULT_ITEM_IMG,
           closeOnSubmit: false, 
           submitOnChange: true,
+          label: "New counter"
         };
 
         const mergedOptions = foundry.utils.mergeObject(defaults, overrides);
@@ -501,7 +510,6 @@ class SfrpgCounterConfig extends FormApplication {
         const action = clickedElement.data().action;
         const counterId = clickedElement.parents('[data-counter-id]')?.data()?.counterId;
 
-        SfrpgCounter.log(true, "Button click", event)
         switch (action) {
             case 'create': {
                 await SfrpgCounterData.createCounter(this.options.actorId, {label: 'New counter', min: 0, max: 3, value: 1, itemImg: "icons/svg/mystery-man.svg"});
@@ -542,14 +550,14 @@ class SfrpgCounterConfig extends FormApplication {
                 let menu = new ContextMenu($(event.currentTarget.parentElement), ".counter-list-values-button", options);
                 
                 //The context menu will clip under the edge of the FormApplication if this isn't set. 
-                //I know, it's disgusting. Great-great-great-great-great-grandparent...
-                //That's a one-shot waiting to happen. 
-                //"Your great great great great great grandparent decides your style! You *MUST* wear the weird pants with too short legs!""
-                
                 let applicationWindow = $(event.currentTarget.parentElement.parentElement.parentElement.parentElement.parentElement.parentElement);
                 applicationWindow.css("overflowX", "visible");
                 applicationWindow.css("overflowY", "visible");
-
+                //I know, it's disgusting. Great-great-great-great-great-grandparent...
+                //That's a one-shot waiting to happen. 
+                //"Your great great great great great grandparent decides your style! You *MUST* wear the weird pants with too short legs!"
+                //"No! I want to wear long legs where I have room to put my context menu!"
+                //(Sounds dirtier than I intended, but that's creativity for you)
                 menu.render($(event.currentTarget.parentElement));
                 break;
             }
@@ -565,19 +573,16 @@ class SfrpgCounterConfig extends FormApplication {
             {
                 name: "Set to max",
                 icon: "<i class='fas fa-angle-double-up'></i>",
-                //condition: true,
                 callback: li => SfrpgCounterData.setToMax(counterId)
             },
             {
                 name: "Set to 0",
                 icon: "<i class='fas fa-circle'></i>",
-               // condition: true,
                 callback: li => SfrpgCounterData.setTo0(counterId)
             },
             {
                 name: "Set to min",
                 icon: "<i class='fas fa-angle-double-down'></i>",
-               // condition: true,
                 callback: li => SfrpgCounterData.setToMin(counterId)
             },
             {
@@ -690,7 +695,6 @@ class SfrpgCounterEdit extends FormApplication {
             counter.subType = itemData.data.subType;
             counter.isActorResource = true;
         } else if(itemData.type == "feat" && itemData.data?.uses?.max != 0) {
-            SfrpgCounter.log(false, 'In feat with charges drop', counter, itemData)
             counter.min = 0;
             counter.max = itemData.data?.uses?.max || counter.max;
             counter.value = itemData.data?.uses?.value || counter.value;
