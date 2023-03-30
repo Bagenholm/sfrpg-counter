@@ -17,7 +17,6 @@
 	"auto-update-by": "How to change the counter's value on the chosen trigger",
 	"feat-control-on": "Automatically activate feat when counter's value reaches this number",
 	"feat-control-off": "Automatically deactivate feat when counter's value reaches this number",
-	"stf": "Visit southerntomfoolery.com for an amazing Starfinder podcast"
+	"stf": "This module was made while listening to the STF actual play podcast. Visit them at https://www.thestfnetwork.com/"
   }
 }
-

@@ -18,11 +18,11 @@ Hooks.on('onActorRest', (restEvent) => {
 }); 
 
 Hooks.on('updateItem', (item, updateData, stuff) => {
-    if(item.type == "actorResource") {
+   /* if(item.type == "actorResource") {
         SfrpgCounterAutoUpdater.updateResourceCounters(item, updateData);
-    } else if(item.type == "feat") {
+    }  else if(item.type == "feat") {
         SfrpgCounterAutoUpdater.updateFeatUsage(item, updateData);
-    }
+    } */
 });
 
 class SfrpgCounter {
@@ -48,7 +48,7 @@ class SfrpgCounter {
 
     static initialize() {
         this.sfrpgCounterConfig = new SfrpgCounterConfig();
-        this.sfrpgCounterEdit = new SfrpgCounterEdit();
+        this.sfrpgCounterEdit = new SfrpgCounterEdit(); //TODO - array and update all in renderWindows?
     }
 
     /**
@@ -61,21 +61,17 @@ class SfrpgCounter {
 
     static tokenIcon(hud, html, token) {
         let counterButton = this.createButton();
-        SfrpgCounter.log(false, 'Token Icon Click', token);
-
-        var userId;
-        //Checks if linked actor and sets actorId or token's unlinked id.
-        if(!token.actorLink) {
-            userId = token.id;
-        } else {
-            userId = token.actorId;
-        }
+        SfrpgCounter.log(false, 'Token Icon Click (token, html)', token, html);
         
+        let userId = token.actorId;
+
         $(counterButton).click((event) => {
             SfrpgCounter.initialize();
             SfrpgCounter.sfrpgCounterConfig.render(true, {userId})});
  
-        let tokenItems = html.find('div.right');
+        let tokenItems = html.find('div.col.left');
+        SfrpgCounter.log(true, 'Token Icon Html test (tokenItems, html)', tokenItems, html);
+
         tokenItems.append(counterButton);
     }
 
@@ -85,7 +81,7 @@ class SfrpgCounter {
 		button.classList.add("control-icon");
         button.classList.add("counter-list-icon-button");
         button.title = game.i18n.localize('SFRPG-COUNTER.button-title');
-        button.innerHTML = `<i class="fas fa-image fa-wave-square"></i>`;
+        button.innerHTML = `<i class="fa-regular fa-wave-square"></i>`;
 
         return button;
     }
@@ -93,11 +89,12 @@ class SfrpgCounter {
 
 class SfrpgCounterData {
     static getLinkedOrUnlinkedActor(actorId) {
+        SfrpgCounter.log(false, 'Getting linked or unlinked actor (id, linked, unlinked)', actorId, game.actors.get(actorId), canvas.tokens.get(actorId)?.document);
         return game.actors.get(actorId) || canvas.tokens.get(actorId).document;
     }
 
     static getCountersForActor(actorId) {
-        SfrpgCounter.log(false, 'Getting counters for actor', actorId, game.actors.get(actorId), canvas.tokens.get(actorId))
+        SfrpgCounter.log(false, 'Getting counters for actor', actorId, game.actors.get(actorId))
         
         //Linked or unlinked actor
         let actor = this.getLinkedOrUnlinkedActor(actorId);
@@ -162,14 +159,41 @@ class SfrpgCounterData {
         if(mergedCounter.isItemAuto) {
             await SfrpgCounterAutoUpdater.updateFeatActivation(mergedCounter);
         }
-
+        SfrpgCounter.log(false, 'Updating counter (mergedCounter, update, actor, originalCounter)', mergedCounter, update, actor, originalCounter);
 
         await actor.setFlag(SfrpgCounter.ID, SfrpgCounter.FLAGS.COUNTERS, update)
         
-        //if(mergedCounter.isSync) { TODO: change back to check whether it's synced
+        if(mergedCounter.isActorResource) {
+            if(!actor.isToken && actor.isToken != undefined) {
+                console.log('--------------------- ACTOR NOT TOKEN ---------------------');
+                await actor.setResourceBaseValue(mergedCounter.type, mergedCounter.subType, mergedCounter.value);
+            } else {
+                await actor.actor.setResourceBaseValue(originalCounter.type, originalCounter.subType, originalCounter.value);
+                console.log('------------------- ACTOR IS TOKEN ---------------------------')
+            }
+            
+            //if(!actor.actorlink && actor.isToken) {
+              //  console.log('--------------------- ACTOR UNLINKED ---------------------')
+              //  await actor.actor.setResourceBaseValue(originalCounter.type, originalCounter.subType, originalCounter.value); //This doesn't work. 
+            //} else if(!actor.isToken) {
+              //  console.log('--------------------- ACTOR LINKED ---------------------');
+              //  await actor.setResourceBaseValue(mergedCounter.type, mergedCounter.subType, mergedCounter.value);
+            //}
+            /* if(!actor.isToken) {
+                console.log('--------------------- ACTOR LINKED ---------------------');
+                await actor.setResourceBaseValue(originalCounter.type, originalCounter.subType, originalCounter.value);
+            } else if(!actor.actorlink) {
+                console.log('--------------------- ACTOR UNLINKED ---------------------')
+                await actor.actor.setResourceBaseValue(originalCounter.type, originalCounter.subType, originalCounter.value); //This doesn't work. 
+            } */
+            //await actor._actor.setResourceBaseValue(originalCounter.type, originalCounter.subType, originalCounter.value);
+        }
+
+        //if(mergedCounter.isSync) { TODO: change back to check whether it's synched?
+        /*
         if(true) {
            await this.syncActorFeatAndResource(mergedCounter, actor, counterId, updateData);
-        }       
+        }   */    
 
         //Renders here to make sure windows are rendered on autoUpdate
         SfrpgCounter.renderWindows();
@@ -177,7 +201,7 @@ class SfrpgCounterData {
         return;
     }
 
-    static async syncActorFeatAndResource(mergedCounter, actor, counterId, updateData) {
+   /* static async syncActorFeatAndResource(mergedCounter, actor, counterId, updateData) {
         //Hacky solution. Shouldn't need to compare entities here. Deprecated, too! Just.. sheesh. Why would anyone let me code?
         let entityType = actor.entity;
         if(mergedCounter.isActorResource) {
@@ -207,7 +231,7 @@ class SfrpgCounterData {
             let itemUpdate = ({'data.uses.value': mergedCounter.value, 'data.uses.max': mergedCounter.max, 'data.uses.per': restType});
             return await featWithCharges.update(itemUpdate);
         }
-    }
+    } */
 
     static checkValueWithinRange(counter) {
         if(parseInt(counter.value) > counter.max) {
@@ -279,15 +303,17 @@ class SfrpgCounterAutoUpdater {
      */
     static updateCombatCounters(combatEventData) {
         //Id is in different locations depending on if it's a linked or unlinked token.
-        let isOldLinked = !combatEventData.oldCombatant._token.isLinked;
-        const oldActorId = isOldLinked ? combatEventData.oldCombatant.data.actorId : combatEventData.oldCombatant.token.data._id;
+        let isOldLinked = combatEventData.oldCombatant.token.isLinked;
+        const oldActorId = isOldLinked ? combatEventData.oldCombatant.actor.id : combatEventData.oldCombatant.token.id;
 
-        let isNewLinked = !combatEventData.oldCombatant._token.isLinked;
-        const newActorId = isNewLinked ? combatEventData.newCombatant.data.actorId : combatEventData.newCombatant.token.data._id;
+        let isNewLinked = combatEventData.newCombatant.token.isLinked;
+        const newActorId = isNewLinked ? combatEventData.newCombatant.actor.id : combatEventData.newCombatant.token.id;
  
         const oldActorCounters = SfrpgCounterData.getCountersForActor(oldActorId);
         const newActorCounters = SfrpgCounterData.getCountersForActor(newActorId);        
 
+        SfrpgCounter.log(true, "Update combat counters: isOldLinked, oldActorId, oldActorCounters, isNewLinked, newActorId, newActorCounters: ", 
+        combatEventData, isOldLinked, oldActorId, oldActorCounters, isNewLinked, newActorId, newActorCounters);
         if(oldActorCounters !== undefined) {
             const endOfTurnCounters = Object.values(oldActorCounters).filter(counter => counter.autoOn == "endTurn");
             this.updateTurnCounters(endOfTurnCounters);
@@ -333,14 +359,16 @@ class SfrpgCounterAutoUpdater {
     }
 
     static updateRestCounters(restEvent) {
-        var restType = restEvent.restType;
         SfrpgCounter.log(false, "Resting", restEvent)
-        let actorCounters;
-        if(restEvent.actor.isToken) {
-            actorCounters = Object.values(SfrpgCounterData.getCountersForActor(restEvent.actor.parent?.id))
+        var restType = restEvent.restType;
+        let actorCounters;  //let actorCounters = Object.values(SfrpgCounterData.getCountersForActor(restEvent.actor.id));
+         if(restEvent.actor.isToken) {
+            actorCounters = Object.values(SfrpgCounterData.getCountersForActor(restEvent.actor.token.id))
         } else if(!restEvent.actor.isToken) {
-            actorCounters = Object.values(SfrpgCounterData.getCountersForActor(restEvent.actor?.data?._id));
-        }
+            SfrpgCounter.log(false, "Resting linked actor (restEvent, actorId)", restEvent, restEvent.actor.id)
+
+            actorCounters = Object.values(SfrpgCounterData.getCountersForActor(restEvent.actor.id));
+        } 
 
         if(actorCounters.length > 0) {
             var restCounters;
@@ -389,54 +417,71 @@ class SfrpgCounterAutoUpdater {
         }
     }
 
-    static updateFeatUsage(item, updateData) {
+
+    //TODO: Update to get the feat data. 
+  /*  static updateFeatUsage(item, updateData) {
         let actorId = this.getActorIdFromItem(item);
         let actorCounters = SfrpgCounterData.getCountersForActor(actorId);
+        SfrpgCounter.log(false, 'Update Feat Usage', item, updateData)
         if(Object.keys(actorCounters).length != 0) {
             let featCounter = Object.values(actorCounters).find(counter => counter.itemId == item.id);
             if(featCounter != null) {
 
                 let originalCounter = featCounter;
-                if(updateData.data.uses?.value != null) {
+                if(updateData.data?.uses?.value != null) {
                     featCounter.value = updateData.data.uses.value; 
                 }
-                if(updateData.data.uses?.max != null) {
+                if(updateData.data?.uses?.max != null) {
                     featCounter.max = updateData.data.uses.max;
-                }
-                if(updateData.data?.uses?.per == "lr") {
-                    featCounter.autoOn = "longRest";
-                    featCounter.autoValue = "toMax";
-                } else if(updateData.data?.uses?.per == "sr") {
-                    featCounter.autoOn = "shortRest";
-                    featCounter.autoValue = "toMax";
                 }
 
                 return SfrpgCounterData.updateCounter(featCounter.id, featCounter, originalCounter);
             }
         }
 
-    }
+    } */
 
     static updateFeatActivation(counter) {
         if(counter.isItemAuto) {
             SfrpgCounter.log(false, 'Automated feat control', counter)
-            const counterActor = SfrpgCounterData.getLinkedOrUnlinkedActor(counter.actorId)
-            const feat = counterActor.data.items?.get(counter.itemId);
+            let counterActor = SfrpgCounterData.getLinkedOrUnlinkedActor(counter.actorId)
+            let feat;
+            if(counterActor.actor?.isToken) {
+                counterActor = counterActor.actor;
+            }
+            SfrpgCounter.log(true, '----------Update', counterActor)
+            feat = counterActor.items?.get(counter.itemId);
+            /* if(typeof counterActor.isLinked === 'undefined') {
+                feat = counterActor.data.items?.get(counter.itemId);
+            } else {
+                feat = counterActor.actor.data.items?.get(counter.itemId);
+            } */
+                
             let updateData;
 
             if(counter.value == counter.itemActivateAt) {
                 updateData = true;
-                SfrpgCounter.log(false, 'Activating feat', feat)
+                SfrpgCounter.log(false, 'Activating feat', feat, counterActor)
+                
+                //activate if counter is a condition
                 if(counter.itemImg.includes('/conditions/')) {
-                    counterActor.setCondition(counter.itemName.toLowerCase(), updateData)
-                    return; 
+                    let conditionName = counter.itemName.toLowerCase();
+                    if(!counterActor.getCondition(conditionName)) {
+                        counterActor.setCondition(counter.itemName.toLowerCase(), updateData)
+                        return; 
+                    }
                 }
             } else if(counter.value == counter.itemDeactivateAt) {
                 updateData = false;
-                SfrpgCounter.log(false, 'Deactivating feat', feat)
+                SfrpgCounter.log(false, 'Deactivating feat', feat, counterActor)
+
+                //deactivate if counter is a condition
                 if(counter.itemImg.includes('/conditions/')) {
-                    counterActor.setCondition(counter.itemName.toLowerCase(), updateData)
-                    return; 
+                    let conditionName = counter.itemName.toLowerCase();
+                    if(counterActor.getCondition(conditionName)) {
+                        counterActor.setCondition(conditionName, updateData);
+                        return;
+                    }
                 }
             }
 
@@ -465,6 +510,7 @@ class SfrpgCounterConfig extends FormApplication {
           itemImg: SfrpgCounter.DEFAULT_ITEM_IMG,
           closeOnSubmit: false, 
           submitOnChange: true,
+          dragDrop: [{ dropSelector: null, dragSelector: null }],
           label: "New counter"
         };
 
@@ -474,27 +520,49 @@ class SfrpgCounterConfig extends FormApplication {
     }
 
     static identifyActor() {
-        if(canvas.tokens.ownedTokens.length == 1) {
-            return canvas.tokens.ownedTokens[0].actor.data._id;
+        SfrpgCounter.log(false, 'Identifying actor (owned, owned length, controlled)', canvas.tokens.controlled)
+        //if not linked
+        if(!canvas.tokens?.controlled[0]?.document.actorLink) {
+            return canvas.tokens.controlled[0]?.id;
+        } else { //if linked
+            return canvas.tokens.controlled[0].actor.id;
+        }
+
+        //Hope that this is unnecessary.
+     /*   if(canvas.tokens.ownedTokens.length == 1) {
+            if(!canvas.tokens.ownedTokens[0].document.actorLink) {
+                return canvas.tokens.ownedTokens[0].document.actorId;
+            } else if (canvas.tokens.ownedTokens[0].document.actorLink) {
+                return canvas.tokens.controlled[0].document.id;
+            }
+
+            //own several tokens on canvas
         } else if(canvas.tokens.ownedTokens.length > 1) {
-            if(!canvas.tokens?.controlled[0]?.data.actorLink) {
+            //if not linked
+            if(!canvas.tokens?.controlled[0]?.document.actorLink) {
                 return canvas.tokens.controlled[0]?.id;
+            } else { //if linked
+                return canvas.tokens.controlled[0].document.id;
             }
-            if(canvas.tokens?.controlled[0]?.actor?.id != null) {
-                return canvas.tokens.controlled[0].actor.id;
-            }
-        } 
+            
+        } */
     }
 
     static getTokenName() {
-        if(canvas.tokens.controlled[0]?.data?.actorLink) {
-            return canvas.tokens.controlled[0].actor.name; 
-        } else {
-            return canvas.tokens.get(this.identifyActor())?.data?.name + "  - (" + this.identifyActor() + ")";
+        if(!canvas.tokens.controlled[0]) {
+            return "Couldn't find a token. Have a cookie instead @";
         }
+        if(canvas.tokens.controlled[0].document.actorLink) {
+            return canvas.tokens.controlled[0].document.actor.name; 
+        } else {
+            let token = canvas.tokens.get(this.identifyActor());
+            SfrpgCounter.log('Grabbing token name', token)
+            return token.name + "  - (" + token.id + ")";
+        } 
     }
 
     getData(options) {
+        SfrpgCounter.log(false, 'Getting data', options)
         return {
             counters: SfrpgCounterData.getCountersForActor(options.actorId)
         }
@@ -594,6 +662,76 @@ class SfrpgCounterConfig extends FormApplication {
         return options;
     }
 
+    async _onDrop(event) {
+        const dragData = event.dataTransfer.getData('text/plain');
+        const parsedDragData = JSON.parse(dragData);
+
+        //const counter = SfrpgCounterData.getCounter(this.options.counterId);
+        SfrpgCounter.log(false, 'Feature configDrop data (parsedDragData, event)', parsedDragData, event);
+
+        if(parsedDragData.type == "Item") {
+            let uuidPeriodIndex = parsedDragData.uuid.lastIndexOf('.');
+            let itemId = parsedDragData.uuid.substring(uuidPeriodIndex + 1);
+            SfrpgCounter.log(false, 'Feature drop data (itemId)', itemId);
+            
+            let counter = this.createCounterFromDrop(this.options, parsedDragData, itemId);
+            
+            //await SfrpgCounterData.createCounter(this.options.id, {label: 'New counter', min: 0, max: 3, value: 1, itemImg: "icons/svg/mystery-man.svg"});
+            //this.addFeatInfoToCounter(this.options, counter, itemId);
+            
+
+            //await SfrpgCounterData.updateCounter(counter.id, counter);
+            const mergedOptions = foundry.utils.mergeObject(this.options, counter);    
+            this.options = mergedOptions;
+            
+            SfrpgCounter.log(false, 'After counter update on drop', counter, parsedDragData, this);
+
+            SfrpgCounter.renderWindows();
+        }  
+    }
+
+    async createCounterFromDrop(options, parsedDragData, itemId) {
+        SfrpgCounter.log(false, 'Create counter from drop (parsedDragData, itemId', parsedDragData, itemId);
+        let actor = SfrpgCounterData.getLinkedOrUnlinkedActor(options.id);
+        
+        let itemData = {};
+
+        //If actor is linked, get the item from the actor's items. If not, get it from the token's 
+        if(actor.actor?.isToken) {
+            itemData = actor.actor.items.get(itemId);
+        } else if(!actor.isToken) {
+            itemData = actor.items.get(itemId); 
+        }
+        
+        SfrpgCounter.log(false, 'Config Feat Drop (counter, actor, itemId, itemData)', actor, itemId, itemData);
+        let counter = {};
+        counter.itemName = itemData.name;
+        counter.itemImg = itemData.img;
+        counter.label = itemData.name;
+        counter.itemId = itemId;
+        if(itemData.type == "actorResource") {
+            counter.min = itemData.system.range.min;
+            counter.max = itemData.system.range.max;
+            counter.value = itemData.actorResourceData.value;
+            counter.type = itemData.system.type;
+            counter.subType = itemData.system.subType;
+            counter.isActorResource = true;
+        } else {
+            counter.min = 0;
+            counter.max = 1;
+            counter.value = 0; //Auto doesn't work for config-dropped feats
+            counter.isItemAuto = true;
+            counter.itemActivateAt = 1;
+            counter.itemDeactivateAt = 0;
+        }
+        await SfrpgCounterData.createCounter(options.id, counter);
+        this.submit();
+    }
+
+    async _updateObject(event, formData) {
+        SfrpgCounter.renderWindows();
+    }
+
 
 }
 
@@ -622,8 +760,8 @@ class SfrpgCounterEdit extends FormApplication {
             itemId: null,
             itemName: null,
             itemImg: SfrpgCounter.DEFAULT_ITEM_IMG,
-            itemActivateAt: 3,
-            itemDeactivateAt: 0,
+            itemActivateAt: null,
+            itemDeactivateAt: null,
             isItemAuto: false,
             dragDrop: [{ dropSelector: null, dragSelector: null }],
             type: null,
@@ -655,10 +793,13 @@ class SfrpgCounterEdit extends FormApplication {
         const parsedDragData = JSON.parse(dragData);
 
         const counter = SfrpgCounterData.getCounter(this.options.counterId);
-        SfrpgCounter.log(false, 'Feature drop data', counter, parsedDragData, this);
+        SfrpgCounter.log(false, 'Feature drop data (counter, parsedDragData, event)', counter, parsedDragData, event);
 
         if(parsedDragData.type == "Item") {
-            const itemId = parsedDragData.data._id;
+            let uuidPeriodIndex = parsedDragData.uuid.lastIndexOf('.');
+            let itemId = parsedDragData.uuid.substring(uuidPeriodIndex + 1);
+            SfrpgCounter.log(false, 'Feature drop data (itemId)', itemId);
+            
             this.addFeatInfoToCounter(this.options, counter, itemId);
             
             await SfrpgCounterData.updateCounter(counter.id, counter);
@@ -673,29 +814,44 @@ class SfrpgCounterEdit extends FormApplication {
 
     addFeatInfoToCounter(options, counter, itemId) {
         counter.itemId = itemId;
+        SfrpgCounter.log(false, 'Feat Drop counter before fetched getLinkedOrUnlinkedActor', counter)
         let actor = SfrpgCounterData.getLinkedOrUnlinkedActor(counter.actorId);
         
-        //Item data is in different places depending on if it's a linked or unlinked actor
+        SfrpgCounter.log(false, 'Feat Drop actor', actor)
+        
         let itemData = {};
-        if(actor.data?.token?.actorLink) {
+
+        //If actor is linked, get the item from the actor's items. If not, get it from the token's 
+        if(actor.actor?.isToken) {
+            itemData = actor.actor.items.get(counter.itemId);
+        } else if(!actor.isToken) {
+            itemData = actor.items.get(counter.itemId); 
+        }
+        
+        //Item data is in different places depending on if it's a linked or unlinked actor. TODO: Is this still relevant in v10?
+        /* if(actor.data?.token?.actorLink) {
             itemData = actor.items?.get(counter.itemId)?.data
         } else {
             itemData = actor.data?.actorData?.items?.find(thing => thing._id == counter.itemId);
-        }
-        SfrpgCounter.log(false, 'Feat Drop actor and itemData', actor, itemData);
+        } */
+
+        //itemData = actor.items?.get(counter.itemId)?.data;
+
+        SfrpgCounter.log(false, 'Feat Drop (counter, actor, itemId, itemData)', counter, actor, itemId, itemData);
 
         counter.itemName = itemData.name;
         counter.itemImg = itemData.img;
         counter.label = itemData.name;
         if(itemData.type == "actorResource") {
-            counter.min = itemData.data.range.min;
-            counter.max = itemData.data.range.max;
-            counter.value = itemData.data.base;
-            counter.type = itemData.data.type;
-            counter.subType = itemData.data.subType;
+            counter.min = itemData.system.range.min;
+            counter.max = itemData.system.range.max;
+            counter.value = itemData.actorResourceData.value;
+            counter.type = itemData.system.type;
+            counter.subType = itemData.system.subType;
             counter.isActorResource = true;
         } else if(itemData.type == "feat" && itemData.data?.uses?.max != 0) {
-            counter.min = 0;
+            counter.hasCharges = true;
+            /** counter.min = 0;
             counter.max = itemData.data?.uses?.max || counter.max;
             counter.value = itemData.data?.uses?.value || counter.value;
             counter.hasCharges = true;
@@ -707,7 +863,7 @@ class SfrpgCounterEdit extends FormApplication {
                     counter.autoOn = "shortRest";
                 }
                 counter.autoValue = "toMax";
-            } 
+            }  **/
         } 
 
     }

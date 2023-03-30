@@ -18,6 +18,12 @@
         <label for="value">Value: </label>
         <input type="text" value="{{value}}" name="value"/>
     </div>
+    <div class="flexrow">
+        <div class="item-image">
+            <img src={{itemImg}} style="height: 35px; max-width:100%;">
+        </div>
+        <div name="itemName">{{itemName}}</div>
+    </div>
     <div title="{{localize "SFRPG-COUNTER.auto-update"}}">
         <label for="isAuto">Auto-update counter value: </label>
         <input type="checkbox" name="isAuto" data-dtype="Boolean" {{checked isAuto}}/>
@@ -47,15 +53,10 @@
         </select>
     </div>
     {{/if}}
+    {{#unless isActorResource}}
     <div title="{{localize "SFRPG-COUNTER.feat-control"}}">
         <label for="isItemAuto">Control Feat Activation: </label>
         <input type="checkbox" name="isItemAuto" data-dtype="Boolean" {{checked isItemAuto}} />
-    </div>
-    <div class="flexrow">
-        <div class="item-image">
-            <img src={{itemImg}} style="height: 35px; max-width:100%;">
-        </div>
-        <div name="itemName">{{itemName}}</div>
     </div>
     {{#if isItemAuto}}
     <div title="{{localize "SFRPG-COUNTER.feat-control-on"}}">
@@ -67,5 +68,6 @@
         <input type="text" value="{{itemDeactivateAt}}" name="itemDeactivateAt" />
     </div>
     {{/if}}
+    {{/unless}}
     </div>
 </form>
