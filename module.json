@@ -1,28 +1,42 @@
 {
-    "name": "sfrpg-counter",
-    "title": "SFRPG Counter",
-    "description": "Allows you to track SFRPG things.",
-    "author": "Sputt",
+  "title": "SFRPG Counter",
+  "description": "Allows you to track SFRPG things.",
+  "url": "https://github.com/Bagenholm/sfrpg-counter",
+  "manifest": "https://github.com/Bagenholm/sfrpg-counter/releases/latest/download/module.json",
+  "download": "https://github.com/Bagenholm/sfrpg-counter/releases/download/0.3.2/module.zip",
+  "scripts": [
+    "scripts/sfrpg-counter.js"
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "languages/en.json",
+      "flags": {}
+    }
+  ],
+  "styles": [
+    "styles/sfrpg-counter.css"
+  ],
+  "version": "0.3.2",
+  "id": "sfrpg-counter",
+  "authors": [
+    {
+      "name": "Sputt",
+      "flags": {}
+    }
+  ],
+  "relationships": {
     "systems": [
-        "sfrpg"
-    ],
-    "url": "https://github.com/Bagenholm/sfrpg-counter",
-    "manifest": "https://github.com/Bagenholm/sfrpg-counter/releases/latest/download/module.json",
-    "download": "https://github.com/Bagenholm/sfrpg-counter/releases/download/0.3.1/module.zip",
-    "scripts": [
-        "scripts/sfrpg-counter.js"
-    ],
-    "languages": [
-        {
-            "lang": "en",
-            "name": "English",
-            "path": "languages/en.json"
-        }
-    ],
-    "styles": [
-        "styles/sfrpg-counter.css"
-    ],
-    "version": "0.3.1",
-    "minimumCoreVersion": "0.8.8",
-    "compatibleCoreVersion": "0.8.9"
+      {
+        "id": "sfrpg",
+        "type": "system",
+        "compatibility": {}
+      }
+    ]
+  },
+  "compatibility": {
+    "minimum": "0.8.8",
+    "verified": "0.8.9"
+  }
 }
