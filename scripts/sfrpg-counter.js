@@ -17,14 +17,6 @@ Hooks.on('onActorRest', (restEvent) => {
     SfrpgCounterAutoUpdater.updateRestCounters(restEvent);
 }); 
 
-Hooks.on('updateItem', (item, updateData, stuff) => {
-   /* if(item.type == "actorResource") {
-        SfrpgCounterAutoUpdater.updateResourceCounters(item, updateData);
-    }  else if(item.type == "feat") {
-        SfrpgCounterAutoUpdater.updateFeatUsage(item, updateData);
-    } */
-});
-
 class SfrpgCounter {
     static ID = 'sfrpg-counter';
     static DEFAULT_ITEM_IMG = "icons/svg/mystery-man.svg";
@@ -48,7 +40,7 @@ class SfrpgCounter {
 
     static initialize() {
         this.sfrpgCounterConfig = new SfrpgCounterConfig();
-        this.sfrpgCounterEdit = new SfrpgCounterEdit(); //TODO - array and update all in renderWindows?
+        this.sfrpgCounterEdit = new SfrpgCounterEdit(); 
     }
 
     /**
@@ -70,7 +62,7 @@ class SfrpgCounter {
             SfrpgCounter.sfrpgCounterConfig.render(true, {userId})});
  
         let tokenItems = html.find('div.col.left');
-        SfrpgCounter.log(true, 'Token Icon Html test (tokenItems, html)', tokenItems, html);
+        SfrpgCounter.log(false, 'Token Icon Html test (tokenItems, html)', tokenItems, html);
 
         tokenItems.append(counterButton);
     }
@@ -171,67 +163,14 @@ class SfrpgCounterData {
                 await actor.actor.setResourceBaseValue(originalCounter.type, originalCounter.subType, originalCounter.value);
                 console.log('------------------- ACTOR IS TOKEN ---------------------------')
             }
-            
-            //if(!actor.actorlink && actor.isToken) {
-              //  console.log('--------------------- ACTOR UNLINKED ---------------------')
-              //  await actor.actor.setResourceBaseValue(originalCounter.type, originalCounter.subType, originalCounter.value); //This doesn't work. 
-            //} else if(!actor.isToken) {
-              //  console.log('--------------------- ACTOR LINKED ---------------------');
-              //  await actor.setResourceBaseValue(mergedCounter.type, mergedCounter.subType, mergedCounter.value);
-            //}
-            /* if(!actor.isToken) {
-                console.log('--------------------- ACTOR LINKED ---------------------');
-                await actor.setResourceBaseValue(originalCounter.type, originalCounter.subType, originalCounter.value);
-            } else if(!actor.actorlink) {
-                console.log('--------------------- ACTOR UNLINKED ---------------------')
-                await actor.actor.setResourceBaseValue(originalCounter.type, originalCounter.subType, originalCounter.value); //This doesn't work. 
-            } */
-            //await actor._actor.setResourceBaseValue(originalCounter.type, originalCounter.subType, originalCounter.value);
         }
 
-        //if(mergedCounter.isSync) { TODO: change back to check whether it's synched?
-        /*
-        if(true) {
-           await this.syncActorFeatAndResource(mergedCounter, actor, counterId, updateData);
-        }   */    
 
         //Renders here to make sure windows are rendered on autoUpdate
         SfrpgCounter.renderWindows();
         
         return;
     }
-
-   /* static async syncActorFeatAndResource(mergedCounter, actor, counterId, updateData) {
-        //Hacky solution. Shouldn't need to compare entities here. Deprecated, too! Just.. sheesh. Why would anyone let me code?
-        let entityType = actor.entity;
-        if(mergedCounter.isActorResource) {
-            if(entityType == "Token") {
-                return await actor._actor.setResourceBaseValue(mergedCounter.type, mergedCounter.subType, mergedCounter.value);
-            } else if(entityType == "Actor"){
-                return await game.actors.get(mergedCounter.actorId)?.setResourceBaseValue(mergedCounter.type, mergedCounter.subType, mergedCounter.value);
-            }
-        } else if(mergedCounter.hasCharges) {
-            SfrpgCounter.log(false, 'Counter with charges', actor, mergedCounter)
-
-            let featWithCharges; 
-            if(entityType == "Actor") {
-                featWithCharges = game.actors.get(mergedCounter.actorId).items.get(mergedCounter.itemId);
-            } else if(entityType == "Token") {
-                featWithCharges = actor.actor.items.get(mergedCounter.itemId)
-            }
-            let restType;
-
-            if(mergedCounter.autoOn == "longRest") {
-                restType = "lr";
-            } else if(mergedCounter.autoOn == "shortRest") {
-                restType = "sr";
-            } else {
-                restType = featWithCharges.data?.data?.uses?.per;
-            }
-            let itemUpdate = ({'data.uses.value': mergedCounter.value, 'data.uses.max': mergedCounter.max, 'data.uses.per': restType});
-            return await featWithCharges.update(itemUpdate);
-        }
-    } */
 
     static checkValueWithinRange(counter) {
         if(parseInt(counter.value) > counter.max) {
@@ -312,7 +251,7 @@ class SfrpgCounterAutoUpdater {
         const oldActorCounters = SfrpgCounterData.getCountersForActor(oldActorId);
         const newActorCounters = SfrpgCounterData.getCountersForActor(newActorId);        
 
-        SfrpgCounter.log(true, "Update combat counters: isOldLinked, oldActorId, oldActorCounters, isNewLinked, newActorId, newActorCounters: ", 
+        SfrpgCounter.log(false, "Update combat counters: isOldLinked, oldActorId, oldActorCounters, isNewLinked, newActorId, newActorCounters: ", 
         combatEventData, isOldLinked, oldActorId, oldActorCounters, isNewLinked, newActorId, newActorCounters);
         if(oldActorCounters !== undefined) {
             const endOfTurnCounters = Object.values(oldActorCounters).filter(counter => counter.autoOn == "endTurn");
@@ -373,7 +312,7 @@ class SfrpgCounterAutoUpdater {
         if(actorCounters.length > 0) {
             var restCounters;
             if(restType == 'short') {
-                restCounters = actorCounters.filter(counter => counter.autoOn == "shortRest");
+                restCounters = actorCounters.filter(counter => counter.autoOn == "shortRest" || counter.autoOn == "longRest");
             } else if(restType == 'long') {
                 restCounters = actorCounters.filter(counter => counter.autoOn == "longRest");
             } 
@@ -417,30 +356,6 @@ class SfrpgCounterAutoUpdater {
         }
     }
 
-
-    //TODO: Update to get the feat data. 
-  /*  static updateFeatUsage(item, updateData) {
-        let actorId = this.getActorIdFromItem(item);
-        let actorCounters = SfrpgCounterData.getCountersForActor(actorId);
-        SfrpgCounter.log(false, 'Update Feat Usage', item, updateData)
-        if(Object.keys(actorCounters).length != 0) {
-            let featCounter = Object.values(actorCounters).find(counter => counter.itemId == item.id);
-            if(featCounter != null) {
-
-                let originalCounter = featCounter;
-                if(updateData.data?.uses?.value != null) {
-                    featCounter.value = updateData.data.uses.value; 
-                }
-                if(updateData.data?.uses?.max != null) {
-                    featCounter.max = updateData.data.uses.max;
-                }
-
-                return SfrpgCounterData.updateCounter(featCounter.id, featCounter, originalCounter);
-            }
-        }
-
-    } */
-
     static updateFeatActivation(counter) {
         if(counter.isItemAuto) {
             SfrpgCounter.log(false, 'Automated feat control', counter)
@@ -449,13 +364,8 @@ class SfrpgCounterAutoUpdater {
             if(counterActor.actor?.isToken) {
                 counterActor = counterActor.actor;
             }
-            SfrpgCounter.log(true, '----------Update', counterActor)
+            SfrpgCounter.log(true, 'Update Feat Actication (actor)', counterActor)
             feat = counterActor.items?.get(counter.itemId);
-            /* if(typeof counterActor.isLinked === 'undefined') {
-                feat = counterActor.data.items?.get(counter.itemId);
-            } else {
-                feat = counterActor.actor.data.items?.get(counter.itemId);
-            } */
                 
             let updateData;
 
@@ -527,25 +437,6 @@ class SfrpgCounterConfig extends FormApplication {
         } else { //if linked
             return canvas.tokens.controlled[0].actor.id;
         }
-
-        //Hope that this is unnecessary.
-     /*   if(canvas.tokens.ownedTokens.length == 1) {
-            if(!canvas.tokens.ownedTokens[0].document.actorLink) {
-                return canvas.tokens.ownedTokens[0].document.actorId;
-            } else if (canvas.tokens.ownedTokens[0].document.actorLink) {
-                return canvas.tokens.controlled[0].document.id;
-            }
-
-            //own several tokens on canvas
-        } else if(canvas.tokens.ownedTokens.length > 1) {
-            //if not linked
-            if(!canvas.tokens?.controlled[0]?.document.actorLink) {
-                return canvas.tokens.controlled[0]?.id;
-            } else { //if linked
-                return canvas.tokens.controlled[0].document.id;
-            }
-            
-        } */
     }
 
     static getTokenName() {
@@ -675,12 +566,6 @@ class SfrpgCounterConfig extends FormApplication {
             SfrpgCounter.log(false, 'Feature drop data (itemId)', itemId);
             
             let counter = this.createCounterFromDrop(this.options, parsedDragData, itemId);
-            
-            //await SfrpgCounterData.createCounter(this.options.id, {label: 'New counter', min: 0, max: 3, value: 1, itemImg: "icons/svg/mystery-man.svg"});
-            //this.addFeatInfoToCounter(this.options, counter, itemId);
-            
-
-            //await SfrpgCounterData.updateCounter(counter.id, counter);
             const mergedOptions = foundry.utils.mergeObject(this.options, counter);    
             this.options = mergedOptions;
             
@@ -719,7 +604,7 @@ class SfrpgCounterConfig extends FormApplication {
         } else {
             counter.min = 0;
             counter.max = 1;
-            counter.value = 0; //Auto doesn't work for config-dropped feats
+            counter.value = 0; 
             counter.isItemAuto = true;
             counter.itemActivateAt = 1;
             counter.itemDeactivateAt = 0;
@@ -827,15 +712,7 @@ class SfrpgCounterEdit extends FormApplication {
         } else if(!actor.isToken) {
             itemData = actor.items.get(counter.itemId); 
         }
-        
-        //Item data is in different places depending on if it's a linked or unlinked actor. TODO: Is this still relevant in v10?
-        /* if(actor.data?.token?.actorLink) {
-            itemData = actor.items?.get(counter.itemId)?.data
-        } else {
-            itemData = actor.data?.actorData?.items?.find(thing => thing._id == counter.itemId);
-        } */
-
-        //itemData = actor.items?.get(counter.itemId)?.data;
+    
 
         SfrpgCounter.log(false, 'Feat Drop (counter, actor, itemId, itemData)', counter, actor, itemId, itemData);
 
@@ -851,19 +728,6 @@ class SfrpgCounterEdit extends FormApplication {
             counter.isActorResource = true;
         } else if(itemData.type == "feat" && itemData.data?.uses?.max != 0) {
             counter.hasCharges = true;
-            /** counter.min = 0;
-            counter.max = itemData.data?.uses?.max || counter.max;
-            counter.value = itemData.data?.uses?.value || counter.value;
-            counter.hasCharges = true;
-
-            if(itemData.data?.uses?.per != null) {
-                if(itemData.data.uses.per == "lr") {
-                    counter.autoOn = "longRest";
-                } else if(itemData.data.uses.per == "sr") {
-                    counter.autoOn = "shortRest";
-                }
-                counter.autoValue = "toMax";
-            }  **/
         } 
 
     }
